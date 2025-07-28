@@ -49,6 +49,8 @@ function setupSpreadsheets() {
 /**
  * Returns sheet name for sales by Date
  * Sheet name format: `sales_YYYY_MM`
+ * @param {Date} [date=new Date()] The date to generate the sheet name for.
+ * @return {string} The formatted sheet name.
  */
 function getMonthlySalesSheetName(date = new Date()) {
   const year = date.getFullYear();
@@ -57,8 +59,9 @@ function getMonthlySalesSheetName(date = new Date()) {
 }
 
 /**
- * Creates a new sales sheet for a given date if it doesn't exist summarySheet
+ * Creates a new sales sheet for a given date if it doesn't exist.
  * Sheet name format: 'sales_YYYY_MM'
+ * @param {Date} [date=new Date()] The date for which to create the sales sheet.
  */
 function createMonthSalesSheet(date = new Date()) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -83,7 +86,9 @@ function createMonthSalesSheet(date = new Date()) {
 }
 
 /**
- * Ensures a month sales sheet exists and return it
+ * Ensures a month sales sheet exists and returns it.
+ * @param {Date} [date=new Date()] The date for the sheet to get.
+ * @return {Sheet} The Google Sheet object for the specified month.
  */
 function getMonthSalesSheet(date = new Date()) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -98,13 +103,18 @@ function getMonthSalesSheet(date = new Date()) {
 }
 
 /**
- * Scans all `sales_YYYY_MM` sheets
- * Determine whether each month has any pending balance
- * Updates `sales_summary` sheet accordingly
+ * Scans all `sales_YYYY_MM` sheets, determines whether each month has any
+ * pending balance, and updates the `sales_summary` sheet accordingly.
  */
 function updateSalesSummary() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const summarySheet = ss.getSheetByName("sales_summary");
+  if (!summarySheet) {
+    console.error(
+      "Sales summary sheet not found. Please run setupSpreadsheets().",
+    );
+    return;
+  }
   const allSheets = ss.getSheets();
 
   const monthStatusMap = {};
@@ -112,9 +122,12 @@ function updateSalesSummary() {
 
   allSheets.forEach((sheet) => {
     const name = sheet.getName();
+    // Test if the sheet name matches the sales sheet format.
     if (/sales_\d{4}_\d{2}/.test(name)) {
       const data = sheet.getDataRange().getValues();
-      if (data.lenght <= 1) {
+      // If sheet is empty or only has a header, mark as settled.
+      if (data.length <= 1) {
+        // <-- Corrected typo here
         monthStatusMap[name] = "settled";
         return;
       }
@@ -122,16 +135,23 @@ function updateSalesSummary() {
       const headers = data[0];
       const pendingIdx = headers.indexOf("pending_balance");
 
+      if (pendingIdx === -1) {
+        console.warn(`Sheet '${name}' is missing 'pending_balance' header.`);
+        return;
+      }
+
+      // Check if any row has a pending balance greater than 0.
       const hasPending = data
-        .slice(1)
+        .slice(1) // Skip header row
         .some((row) => Number(row[pendingIdx]) > 0);
       monthStatusMap[name] = hasPending ? "pending" : "settled";
     }
   });
-  // clear and rebuld summary sheet
+  // Clear and rebuild summary sheet.
   summarySheet.clearContents();
   summarySheet.appendRow(["month", "status", "last_updated_at"]);
 
+  // Add the updated status for each month to the summary sheet.
   Object.entries(monthStatusMap).forEach(([month, status]) => {
     summarySheet.appendRow([
       month,
@@ -143,4 +163,5 @@ function updateSalesSummary() {
       ),
     ]);
   });
+  console.log("Sales summary updated.");
 }
