@@ -10,7 +10,6 @@
  */
 function setupSpreadsheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-
   // Create the `customers` sheet if it doesn't already exist.
   if (!ss.getSheetByName("customers")) {
     const customersSheet = ss.insertSheet("customers");
@@ -105,4 +104,43 @@ function getMonthSalesSheet(date = new Date()) {
  */
 function updateSalesSummary() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const summarySheet = ss.getSheetByName("sales_summary");
+  const allSheets = ss.getSheets();
+
+  const monthStatusMap = {};
+  const now = new Date();
+
+  allSheets.forEach((sheet) => {
+    const name = sheet.getName();
+    if (/sales_\d{4}_\d{2}/.test(name)) {
+      const data = sheet.getDataRange().getValues();
+      if (data.lenght <= 1) {
+        monthStatusMap[name] = "settled";
+        return;
+      }
+
+      const headers = data[0];
+      const pendingIdx = headers.indexOf("pending_balance");
+
+      const hasPending = data
+        .slice(1)
+        .some((row) => Number(row[pendingIdx]) > 0);
+      monthStatusMap[name] = hasPending ? "pending" : "settled";
+    }
+  });
+  // clear and rebuld summary sheet
+  summarySheet.clearContents();
+  summarySheet.appendRow(["month", "status", "last_updated_at"]);
+
+  Object.entries(monthStatusMap).forEach(([month, status]) => {
+    summarySheet.appendRow([
+      month,
+      status,
+      Utilities.formatDate(
+        now,
+        Session.getScriptTimeZone(),
+        "yyyy-MM-dd HH:mm:ss",
+      ),
+    ]);
+  });
 }
