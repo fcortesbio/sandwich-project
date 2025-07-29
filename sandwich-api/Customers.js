@@ -3,27 +3,25 @@
  * Handles customer registration, lookup, and validation
  */
 
+// ===  Constants  ===
+// Regex patterns: for data input validation
+const NON_DIGITS_REGEX = /\D/g; // find all characters in a string that are NOT digits.
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; //true for:username@domain.com structure
+
+// ===  Helpers  ===
+
 // normalizedPhone = phone.replace(/[\s\-\(\)]/g, "").trim();
 function phoneValidator(phone) {
   // 1. Return a failure object if the input is invalid
   if (!phone || typeof phone !== "string") {
     return { success: false, value: null };
   }
-
   // 2. Remove all non-digit characters
-  let digitsOnly = phone.replace(/\D/g, "");
-
-  // 3. Handle the optional "1" country code
-  if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) {
-    digitsOnly = digitsOnly.substring(1);
-  }
-
-  // 4. Return the appropriate object based on validation
-  if (digitsOnly.length === 10) {
-    return { success: true, value: digitsOnly };
-  } else {
-    return { success: false, value: null };
-  }
+  let digitsOnly = phone.replace(NON_DIGITS_REGEX, "");
+  // 3. Return the appropriate object based on validation
+  return digitsOnly.length === 10
+    ? { success: true, value: digitsOnly }
+    : { success: false, value: null };
 }
 
 function emailValidator(email) {
@@ -31,18 +29,15 @@ function emailValidator(email) {
   if (!email || typeof email !== "string") {
     return { success: false, value: null };
   }
-  // 2. trim whitespaces for cleaner validation
-  const trimmedEmail = email.trim();
-
-  // 3. Test against the regular expression
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const isValid = emailRegex.test(trimmedEmail);
-
-  return isValid
-    ? { success: true, value: trimmedEmail }
+  // 2. trim whitespaces, format to lowers for cleaner validation
+  const trimmed = email.trim().toLowerCase();
+  // 3. Test against the global regular expression
+  return EMAIL_REGEX.test(trimmed)
+    ? { success: true, value: trimmed }
     : { success: false, value: null };
 }
 
+// === CORE FUNCTIONS ===
 /**
  * Registers a new customer in the spreadsheet
  * @param {Object} customerData - Customer information
@@ -61,35 +56,30 @@ function registerCustomer({ first_name, last_name, phone, email }) {
         "Fields 'first_name', 'last_name', and 'phone' are required",
       );
     }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email && !emailRegex.test(email)) {
-      throw new Error("Invalid email format");
-    }
-
-    // Validate phone format (basic validation)
-    // deprecating: using validator function phoneValidator()
-    // const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    // if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ""))) {
-    //   throw new Error("Invalid phone number format");
-    // }
+    // validate phone number
     const phoneValidation = phoneValidator(phone);
     if (!phoneValidation.success) {
       throw new Error("Phone number must be 10 digits");
     }
+    const normalizedPhone = phoneValidation.value;
+
+    // validate email address if needed
+    const normalizedEmail = "";
+    if (email) {
+      const emailValidation = emailValidator(email);
+      if (!emailValidation.success) {
+        throw new Error("Invalid email format");
+      }
+      normalizedEmail = emailValidation.value;
+    }
 
     // 2. Check for duplicates by phone or email
-    const existingByPhone = findCustomerByPhone(phone);
-    if (existingByPhone) {
+    if (findCustomerByPhone(normalizedPhone)) {
       throw new Error("Customer with this phone number already exists");
     }
 
-    if (email) {
-      const existingByEmail = findCustomerByEmail(email);
-      if (existingByEmail) {
-        throw new Error("Customer with this email already exists");
-      }
+    if (normalizedEmail && findCustomerByEmail(email)) {
+      throw new Error("Customer with this email already exists");
     }
 
     // 3. Create new row with generated customer_id and timestamp
