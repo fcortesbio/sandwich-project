@@ -83,21 +83,21 @@ const Customer3 = {
 
 const CustomerInvalidPhone = {
   first_name: "John",
-  last_name: "BadPhone",
+  last_name: "Badphone",
   phone: "123", // Phone number is not 10 digits
   email: "badphone@mail.com",
 };
 
 const CustomerInvalidEmail = {
   first_name: "Maria",
-  last_name: "BadEmail",
+  last_name: "Badmail",
   phone: "5555555555",
   email: "bad-email-format", // Email format is invalid
 };
 
 const CustomerMissingPhone = {
   first_name: "Joe",
-  last_name: "NoPhone",
+  last_name: "Phoneless",
   phone: "", // Required field is missing
   email: "nophone@mail.com",
 };
@@ -106,15 +106,15 @@ const CustomerMissingPhone = {
 // These assume Customer1 and Customer2 have been successfully registered first.
 
 const CustomerDuplicatePhone = {
-  first_name: "Duplicate",
-  last_name: "PhoneUser",
+  first_name: "Mateo",
+  last_name: "Usedphone",
   phone: "3176359773", // Same phone as Customer1
   email: "new.email@mail.com",
 };
 
 const CustomerDuplicateEmail = {
-  first_name: "Duplicate",
-  last_name: "EmailUser",
+  first_name: "Gustavo",
+  last_name: "Usedmail",
   phone: "9998887777",
   email: "isalessthan3@mail.com", // Same email as Customer2
 };
