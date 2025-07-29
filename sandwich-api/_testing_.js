@@ -1,7 +1,21 @@
+/**
+ * Runs a full suite of tests for customer registration and lookup.
+ */
 function runTest() {
+  // --- Test successful registrations and lookups ---
+  console.log("--- Running Successful Registration Tests ---");
   testingCustomers(Customer1);
   testingCustomers(Customer2);
   testingCustomers(Customer3);
+  testingCustomers(CustomerNoEmail); // Test valid customer with no email
+
+  // --- Test registrations that are expected to fail ---
+  console.log("\n--- Running Expected Failure Tests ---");
+  testExpectedFailure(CustomerInvalidPhone, "must be 10 digits");
+  testExpectedFailure(CustomerInvalidEmail, "Invalid email format");
+  testExpectedFailure(CustomerMissingPhone, "are required");
+  testExpectedFailure(CustomerDuplicatePhone, "phone number already exists");
+  testExpectedFailure(CustomerDuplicateEmail, "email already exists");
 }
 
 function testingCustomers(testCustomer) {
@@ -13,11 +27,42 @@ function testingCustomers(testCustomer) {
   __LookupTest(testCustomer, "customer_id", customer.customer_id);
 }
 
+/**
+ * Tests that a customer registration fails for a predictable reason.
+ * The test PASSES if registerCustomer returns { success: false }.
+ * @param {Object} testCustomer - The customer data that should cause a failure.
+ * @param {string} expectedErrorPart - A substring of the expected error message.
+ */
+function testExpectedFailure(testCustomer, expectedErrorPart) {
+  console.log(
+    `\n--- Testing Expected Failure for: ${testCustomer.first_name} ---`,
+  );
+  const regResult = registerCustomer(testCustomer);
+
+  if (!regResult.success) {
+    if (regResult.error && regResult.error.includes(expectedErrorPart)) {
+      console.log(
+        `✅ PASSED: Registration correctly failed with message: "${regResult.error}"`,
+      );
+    } else {
+      console.warn(
+        `⚠️ PASSED but with wrong error: Expected message to include "${expectedErrorPart}", but got "${regResult.error}"`,
+      );
+    }
+  } else {
+    // This is a failure of the test, as the registration should have been blocked.
+    console.error(
+      `❌ FAILED: Invalid customer was registered successfully when it should have failed.`,
+    );
+  }
+}
+
+
 const Customer1 = {
   first_name: "Nathalia",
   last_name: "Cruz",
   phone: "3176359773",
-  email: "natha.cruz@mail.com",
+  email: "nathalessthan3@mail.com",
 };
 
 const Customer2 = {
@@ -33,6 +78,56 @@ const Customer3 = {
   phone: "3118917668",
   email: "fcortesbio@mail.com",
 };
+
+// --- Test customers for expected failures ---
+
+const CustomerInvalidPhone = {
+  first_name: "John",
+  last_name: "BadPhone",
+  phone: "123", // Phone number is not 10 digits
+  email: "badphone@mail.com",
+};
+
+const CustomerInvalidEmail = {
+  first_name: "Maria",
+  last_name: "BadEmail",
+  phone: "5555555555",
+  email: "bad-email-format", // Email format is invalid
+};
+
+const CustomerMissingPhone = {
+  first_name: "Joe",
+  last_name: "NoPhone",
+  phone: "", // Required field is missing
+  email: "nophone@mail.com",
+};
+
+// --- Test customers for duplicate entries ---
+// These assume Customer1 and Customer2 have been successfully registered first.
+
+const CustomerDuplicatePhone = {
+  first_name: "Duplicate",
+  last_name: "PhoneUser",
+  phone: "3176359773", // Same phone as Customer1
+  email: "new.email@mail.com",
+};
+
+const CustomerDuplicateEmail = {
+  first_name: "Duplicate",
+  last_name: "EmailUser",
+  phone: "9998887777",
+  email: "isalessthan3@mail.com", // Same email as Customer2
+};
+
+// --- A valid edge case customer ---
+
+const CustomerNoEmail = {
+  first_name: "Valentina",
+  last_name: "Veliz",
+  phone: "4443332222",
+  email: "", // Email is optional
+};
+
 
 function __registerCustomerTest(testCustomer) {
   const regResult = registerCustomer(testCustomer);

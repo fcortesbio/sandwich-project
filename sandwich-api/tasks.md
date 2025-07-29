@@ -32,7 +32,7 @@
 - Design sheet: `purchases` with columns like:
 ```
 
-purchase\_id | customer\_id | items | total\_price | purchased\_at
+purchase_id | customer_id | items | total_price | purchased_at
 
 ```
 - Add `registerPurchase(customerId, items)` function
