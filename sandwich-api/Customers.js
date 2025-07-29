@@ -4,37 +4,71 @@
  */
 
 // ===  Constants  ===
-// Regex patterns: for data input validation
-const NON_DIGITS_REGEX = /\D/g; // find all characters in a string that are NOT digits.
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; //true for:username@domain.com structure
+// Regex patterns for data input validation
+const NON_DIGITS_REGEX = /\D/g; // Matches all characters that are NOT digits.
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Validates a standard email structure like name@domain.com
 
 // ===  Helpers  ===
-
-// normalizedPhone = phone.replace(/[\s\-\(\)]/g, "").trim();
+/**
+ * Validates and cleans a phone number string.
+ * It removes all non-digit characters and checks if the result is exactly 10 digits long.
+ *
+ * @param {*} phone The raw phone number input to validate. Expected to be a string.
+ * @returns {{success: boolean, value: string|null}} An object indicating validation success.
+ * If successful, `value` contains the 10-digit string. Otherwise, `value` is null.
+ */
 function phoneValidator(phone) {
-  // 1. Return a failure object if the input is invalid
+  // 1. Return a failure object if the input is empty or not a string.
   if (!phone || typeof phone !== "string") {
     return { success: false, value: null };
   }
-  // 2. Remove all non-digit characters
+  // 2. Remove all non-digit characters from the string.
   let digitsOnly = phone.replace(NON_DIGITS_REGEX, "");
-  // 3. Return the appropriate object based on validation
+
+  // 3. Return the appropriate object based on whether the result is 10 digits.
   return digitsOnly.length === 10
     ? { success: true, value: digitsOnly }
     : { success: false, value: null };
 }
 
+/**
+ * Validates an email address string.
+ * It trims whitespace, converts to lowercase, and tests against a regex pattern.
+ *
+ * @param {*} email The email address to validate. Expected to be a string.
+ * @returns {{success: boolean, value: string|null}} An object indicating validation success.
+ * If successful, `value` contains the cleaned, lowercase email. Otherwise, `value` is null.
+ */
 function emailValidator(email) {
-  // 1. Return a failure object if the input is invalid
+  // 1. Return a failure object if the input is empty or not a string.
   if (!email || typeof email !== "string") {
     return { success: false, value: null };
   }
-  // 2. trim whitespaces, format to lowers for cleaner validation
+  // 2. Trim whitespace and convert to lowercase for cleaner validation.
   const trimmed = email.trim().toLowerCase();
-  // 3. Test against the global regular expression
+
+  // 3. Test the cleaned email against the global regular expression.
   return EMAIL_REGEX.test(trimmed)
     ? { success: true, value: trimmed }
     : { success: false, value: null };
+}
+
+/**
+ * Retrieves a specific sheet named "customers" from the active spreadsheet.
+ * This is a guard function that ensures the sheet exists before other code tries to use it.
+ *
+ * @throws {Error} If the "customers" sheet cannot be found.
+ * @returns {GoogleAppsScript.Spreadsheet.Sheet} The "customers" sheet object.
+ */
+function getCustomersSheetOrThrow() {
+  const sheet =
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("customers");
+  if (!sheet) {
+    throw new Error(
+      "Customers sheet not found. Please run setupSpreadsheets() first.",
+    );
+  }
+  return sheet;
 }
 
 // === CORE FUNCTIONS ===
