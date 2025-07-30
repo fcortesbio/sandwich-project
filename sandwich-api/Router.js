@@ -38,7 +38,10 @@ function doGet(e) {
       default:
         // Handle any action that isn't recognized.
         return ContentService.createTextOutput(
-          JSON.stringify({ success: false, error: "Unknown or unsupported GET action." })
+          JSON.stringify({
+            success: false,
+            error: "Unknown or unsupported GET action.",
+          })
         ).setMimeType(ContentService.MimeType.JSON);
     }
   } catch (err) {
@@ -68,7 +71,10 @@ function doPost(e) {
   } catch (err) {
     // If JSON parsing fails, return an error indicating an invalid request.
     return ContentService.createTextOutput(
-      JSON.stringify({ success: false, error: "Invalid JSON format in request body." })
+      JSON.stringify({
+        success: false,
+        error: "Invalid JSON format in request body.",
+      })
     ).setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -89,7 +95,10 @@ function doPost(e) {
     default:
       // Handle any action that isn't recognized.
       return ContentService.createTextOutput(
-        JSON.stringify({ success: false, error: "Unknown or unsupported POST action." })
+        JSON.stringify({
+          success: false,
+          error: "Unknown or unsupported POST action.",
+        })
       ).setMimeType(ContentService.MimeType.JSON);
   }
 }
