@@ -150,6 +150,29 @@ function findCustomerById(customerId) {
 }
 
 /**
+ * Finds a customer by exact first and last name match (case-insensitive).
+ * @param {string} firstName
+ * @param {string} lastName
+ * @returns {Object|null}
+ */
+function findCustomerByFullName(firstName, lastName) {
+  if (!firstName || !lastName) return null;
+
+  const lowerFirst = firstName.trim().toLowerCase();
+  const lowerLast = lastName.trim().toLowerCase();
+
+  const allCustomers = getAllCustomers();
+
+  return (
+    allCustomers.find(
+      (c) =>
+        (c.first_name || "").toLowerCase() === lowerFirst &&
+        (c.last_name || "").toLowerCase() === lowerLast,
+    ) || null
+  );
+}
+
+/**
  * Retrieves all customer records from the spreadsheet.
  * @returns {Array<Object>} An array of all customer objects. Returns an empty array on error or if no customers exist.
  */
