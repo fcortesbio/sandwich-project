@@ -11,16 +11,6 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Validates a standard email 
 // ================  Helpers  ================
 
 /**
- * Private helper to log errors to the console with a specific context.
- * @private
- * @param {string} context - The name of the function or context where the error occurred.
- * @param {Error|string} error - The error object or message to log.
- */
-function _logError(context, error) {
-  console.error(`[${context}] ${error?.message || error}`);
-}
-
-/**
  * Private helper to convert a spreadsheet row (array) into a customer object.
  * @private
  * @param {Array<string|number>} row - The array of cell values for a single customer.
