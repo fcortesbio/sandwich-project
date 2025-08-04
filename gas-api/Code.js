@@ -45,3 +45,13 @@ function setupSpreadsheets() {
     console.log("Sheet 'Sheet1' has been deleted.");
   }
 }
+
+/**
+ * Private helper to log errors to the console with a specific context.
+ * @private
+ * @param {string} context - The name of the function or context where the error occurred.
+ * @param {Error|string} error - The error object or message to log.
+ */
+function _logError(context, error) {
+  console.error(`[${context}] ${error?.message || error}`);
+}
