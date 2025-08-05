@@ -40,7 +40,7 @@ function _getSalesSheetForMonth(month) {
       "last_payment_datetime",
     ]);
     console.log(`Sales sheet for ${month} created`);
-  }
+  } else console.log(`Sales sheet for ${month} already exists`);
 
   return sheet;
 }
