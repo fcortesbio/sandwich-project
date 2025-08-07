@@ -28,10 +28,10 @@ function doGet(e) {
     switch (action) {
       case "setup":
         // Initialize spreadsheet structure for customer and sales management
-        const ss = setupSpreadsheets();
+        const result = setupSpreadsheets();
         // Return the customer data as a JSON string.
         return ContentService.createTextOutput(
-          JSON.stringify({ success: true, data: ss })
+          JSON.stringify({ success: true, result: result })
         ).setMimeType(ContentService.MimeType.JSON);
 
       case "getAllCustomers":
