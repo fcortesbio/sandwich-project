@@ -268,7 +268,7 @@ function registerCustomer({ first_name, last_name, phone, email }) {
 
     // 4. Create new customer record
     const sheet = _getCustomersSheetOrThrow();
-    const customerId = generateCustomerId();
+    const customerId = _generateNextCustomerId(); // using the new function
     const registeredAt = new Date().toISOString();
 
     const newCustomer = {
