@@ -1,14 +1,25 @@
-function runTest() {
-  return;
-}
+// const updatedCustomer = {
+//   "customer_id" : "C00002",
+//   "email": "natha.cruz@rockmail.com"
+// }
 
-function test_getSalesSheetForMonth(month) {
-  const months = ["2025-02", "2025-03", "2025-04", "2025-05", "2025-06"];
-  for (const month of months) {
-    let sheet = _getSalesSheetForMonth(month);
-    console.log(`Sheet for month: ${month} found or created`);
-  }
-}
+// function runTest(){
+//   const updateNatha = updateCustomer(updatedCustomer)
+//   console.log("Customer updated")
+//   return updateNatha
+// }
+
+// function runTest() {
+//   return;
+// }
+
+// function test_getSalesSheetForMonth(month) {
+//   const months = ["2025-02", "2025-03", "2025-04", "2025-05", "2025-06"];
+//   for (const month of months) {
+//     let sheet = _getSalesSheetForMonth(month);
+//     console.log(`Sheet for month: ${month} found or created`);
+//   }
+// }
 
 // /**
 //  * Runs a full suite of tests for customer registration and lookup.
