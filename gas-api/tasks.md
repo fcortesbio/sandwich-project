@@ -1,76 +1,87 @@
-# 🧭 Next Steps for Sandwich-API (Customers & Orders)
+# 📋 Sandwich Project – Task Tracker
 
-## ✅ Completed (as of today)
-- Customer registration system
-  - Phone and email normalization/validation
-  - Duplicate checking by phone/email
-  - Auto-incremented customer ID system (C00001+)
-  - Sheet-based persistence via `appendRow()`
-- Lookup functions
-  - `findCustomerByPhone()`, `findCustomerByEmail()`, `findCustomerById()`
-- Utility helpers for consistent data processing
-- Tests for registration and lookups
+This document outlines current, upcoming, and future development tasks for the **Sandwich-API** backend system. It tracks progress across customer and sales modules.
 
 ---
 
-## 🛠️ Immediate Priorities (Tomorrow)
-### 1. 🔍 Implement Name-Based Finders
-- `findCustomersByFirstName(name)`
-- `findCustomersByLastName(name)`
-- `findCustomersByFullName(first, last)`
-> Consider fuzzy search or partial matches as optional improvements
+## ✅ Completed Tasks (Customers)
 
-### 2. 🧪 Write Tests for Name-Based Finders
-- Use the same pattern as `__LookupTest()` to verify behavior
-- Consider testing case-insensitive matches
-
----
-
-## 🔜 Short-Term Objectives
-### 3. 🛒 Begin Modeling Purchases
-- Each purchase will belong to a customer (via `customer_id`)
-- Design sheet: `purchases` with columns like:
-```
-
-purchase_id | customer_id | items | total_price | purchased_at
-
-```
-- Add `registerPurchase(customerId, items)` function
-- Auto-generate `purchase_id` like `P00001`
-
-### 4. 🧠 Define Purchase "Items"
-Decide how to represent items:
-- Flat string (e.g. `"Sandwich: Jamón, Queso, Pan integral"`)
-- Or structured (array or JSON-encoded string)
-
-> Tip: keep this extensible for future pricing logic.
+- [x] Customer registration system
+  - [x] Phone and email normalization/validation
+  - [x] Duplicate checking by phone/email
+  - [x] Auto-incremented customer ID system (C00001+)
+  - [x] Sheet-based persistence via `appendRow()`
+- [x] Lookup functions
+  - [x] `findCustomerByPhone()`
+  - [x] `findCustomerByEmail()`
+  - [x] `findCustomerById()`
+  - [x] `findCustomerByFullName(first, last)`
+- [x] Retrieve all customers (`getAllCustomers()`)
+- [x] Tests for registration and lookup logic
+- [x] Update customer logic implemented and tested
 
 ---
 
-## 📈 Future Enhancements
-### 5. ✍️ Purchase History Retrieval
-- `getPurchasesByCustomerId(id)`
-- `getPurchaseById(purchase_id)`
+## 🛠️ Immediate Priorities (Sales MVP)
 
-### 6. 📊 Reports & Metrics
-- Total number of purchases
-- Most active customer
-- Most common ingredients / combos (depends on item structure)
+- [ ] **Register Sale Function**
+  - [ ] `registerSale(customerId, quantity, amountPaid)`
+  - [ ] Check or create monthly sheet (`sales_YYYY_MM`)
+  - [ ] Auto-generate `sale_id` (S00001+)
+  - [ ] Compute: `total_price`, `pending_balance`, `status`, timestamps
+- [ ] **Router Integration**
+  - [ ] Add `"registerSale"` to `doPost()`
+  - [ ] Parse and forward to `registerSale(...)`
 
----
-
-## 🧪 Optional: Test Management Utilities
-- Add a `clearCustomersSheet()` and `clearPurchasesSheet()` for test isolation
-- Add test runner with assertions rather than just console logs
-
----
-
-## 🧱 Codebase Maintenance
-- Extract test functions into `CustomersTest.js` (or separate section)
-- Document API contracts for each public method
+- [ ] **Tests for Sale Registration**
+  - [ ] Register fully paid sale
+  - [ ] Register partially paid sale
+  - [ ] Register unpaid sale
+  - [ ] Assert correct status logic
 
 ---
 
-## 🔄 Reminders
-- Your goal is to make this a modular backend for a real sandwich-ordering platform
-- You're iterating toward a Google Apps Script API that can be hit from a frontend (or exposed as REST later)
+## 🔜 Short-Term Objectives (Data Retrieval)
+
+- [ ] `getSalesByCustomerId(customerId)`
+  - [ ] Loop over all monthly sales sheets
+  - [ ] Return all sales for a customer
+- [ ] `getSaleById(saleId)`
+  - [ ] Scan all sales sheets
+  - [ ] Return matching sale object
+- [ ] **Router: Add GET Endpoints**
+  - [ ] `?action=getSalesByCustomerId&id=C00001`
+  - [ ] `?action=getSaleById&id=S00001`
+
+---
+
+## 📦 Future Enhancements
+
+- [ ] `getMonthlySalesReport(YYYY-MM)`
+  - [ ] Total sales, total paid, total pending
+  - [ ] Number of sales & unique customers
+- [ ] `updateSalePayment(saleId, additionalAmount)`
+  - [ ] Update `amount_paid`, `pending_balance`, `status`
+  - [ ] Set `last_payment_datetime`
+- [ ] `clearSalesSheets()` helper for test cleanup
+- [ ] Extract and organize into `SalesTest` suite
+
+---
+
+## 📚 Documentation & Maintenance
+
+- [ ] Document public API contracts (input/output for all endpoints)
+- [ ] Expand README to reflect full Customer + Sales coverage
+- [ ] Consider splitting files into:
+  - `Sales.js`
+  - `Customers.js`
+  - `Router.js`
+  - `Utils.js`
+
+---
+
+## 🧭 Guiding Principles
+
+- Make each module independently testable
+- Favor spreadsheet resilience and data integrity
+- Make everything callable via `doGet` or `doPost` for future frontend usage
