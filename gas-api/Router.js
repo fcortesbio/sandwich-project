@@ -21,6 +21,7 @@
 function doGet(e) {
   // Extract the action from the URL query parameters.
   const action = e.parameter.action;
+  Logger.log("Processing GET request. ", `Action: ${action}`);
 
   try {
     // Use a switch statement to handle different actions.
@@ -30,7 +31,7 @@ function doGet(e) {
         const ss = setupSpreadsheets();
         // Return the customer data as a JSON string.
         return ContentService.createTextOutput(
-          JSON.stringify({ success: true, data: ss }),
+          JSON.stringify({ success: true, data: ss })
         ).setMimeType(ContentService.MimeType.JSON);
 
       case "getAllCustomers":
@@ -38,7 +39,7 @@ function doGet(e) {
         const customers = getAllCustomers();
         // Return the customer data as a JSON string.
         return ContentService.createTextOutput(
-          JSON.stringify({ success: true, data: customers }),
+          JSON.stringify({ success: true, data: customers })
         ).setMimeType(ContentService.MimeType.JSON);
 
       // TODO: Add more cases for other GET actions, e.g., "getCustomerById".
@@ -49,13 +50,14 @@ function doGet(e) {
           JSON.stringify({
             success: false,
             error: "Unknown or unsupported GET action.",
-          }),
+          })
         ).setMimeType(ContentService.MimeType.JSON);
     }
   } catch (err) {
     // Catch any unexpected errors during execution and return a generic error message.
+    Logger.log("Unexpected error during execution:", `error: ${err.message}`);
     return ContentService.createTextOutput(
-      JSON.stringify({ success: false, error: err.message }),
+      JSON.stringify({ success: false, error: err.message })
     ).setMimeType(ContentService.MimeType.JSON);
   }
 }
@@ -82,7 +84,7 @@ function doPost(e) {
       JSON.stringify({
         success: false,
         error: "Invalid JSON format in request body.",
-      }),
+      })
     ).setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -95,7 +97,7 @@ function doPost(e) {
       // Call the function to handle customer registration, passing the provided data.
       const result = registerCustomer(data);
       return ContentService.createTextOutput(
-        JSON.stringify(result),
+        JSON.stringify(result)
       ).setMimeType(ContentService.MimeType.JSON);
 
     // TODO: Add more cases for other POST actions, e.g., "createSaleRecord".
@@ -106,7 +108,7 @@ function doPost(e) {
         JSON.stringify({
           success: false,
           error: "Unknown or unsupported POST action.",
-        }),
+        })
       ).setMimeType(ContentService.MimeType.JSON);
   }
 }
