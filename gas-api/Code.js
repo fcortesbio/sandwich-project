@@ -32,7 +32,7 @@ function setupSpreadsheets() {
     const summarySheet = ss.insertSheet("sales_summary");
     summarySheet.appendRow([
       "month",
-      "status", // "pending" or "settled"
+      "status",
       "last_updated_at",
     ]);
     actions.push("Sheet `sales_summary` created.");
@@ -46,9 +46,10 @@ function setupSpreadsheets() {
   }
 
   // Return a success object with the list of actions.
-  return actions.length === 0
-    ? { success: true, actions: null }
-    : { success: true, actions: actions };
+  // Check if the array is empty using the length property.
+  return actions.length === 0 ? 
+    { success: true, actions: null } : 
+    { success: true, actions: actions };
 }
 
 /**
