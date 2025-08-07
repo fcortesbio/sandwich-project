@@ -53,5 +53,7 @@ function setupSpreadsheets() {
  * @param {Error|string} error - The error object or message to log.
  */
 function _logError(context, error) {
-  console.error(`[${context}] ${error?.message || error}`);
+  const errorMessage = error instanceof Error ? error.message : error;
+  console.error(`[${context}] ${errorMessage}`);
+  // console.error(`[${context}] ${error?.message || error}`);
 }
