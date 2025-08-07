@@ -45,7 +45,7 @@ function setupSpreadsheets() {
 
   const message =
     actions.length === 0 ? "No action required." : "Setup completed.";
-  return { success: true, message: message, actions: actions };
+  return { message: message, actions: actions };
 }
 
 /**
