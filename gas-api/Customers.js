@@ -26,7 +26,7 @@ function _rowToCustomerObject(row, headers) {
 }
 
 /**
- *  Retrieves the last customer ID from the settings sheet and increments it.
+ * Retrieves the last customer ID from the settings sheet and increments it.
  * Throws an error if the settings sheet or key is not found
  * @private
  * @returns {string} The new unique customer ID (e.g., "C00001")
@@ -63,6 +63,57 @@ function _generateNextCustomerId() {
     _logError("_generateNextCustomerId", error);
     throw new Error("Failed to generate a new customer ID.");
   }
+}
+
+/**
+ * Private generic helper to find a customer row by a specific column name and value.
+ * This version also returns the row index, which is needed for updates.
+ * @private
+ * @param {string} columnName - The name of the column to search in (e.g., "phone").
+ * @param {string|number} value - The value to search for.
+ * @returns {{customer: Object, rowIndex: number}|null} The customer object and its 1-based row index if found, otherwise null.
+ */
+function _findCustomerAndIndexBy(columnName, value) {
+  try {
+    const sheet = _getCustomersSheetOrThrow();
+    const data = sheet.getDataRange().getValues();
+    const headers = data.shift(); // Remove headers from data and store them
+
+    const columnIndex = headers.indexOf(columnName);
+    if (columnIndex === -1) return null; // Column not found
+
+    const normalizedValue = String(value).trim().toLowerCase();
+
+    // Start from the second row (index 1) since the first is the header.
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const cellValue = String(row[columnIndex]).trim().toLowerCase();
+      if (cellValue === normalizedValue) {
+        // Return the customer object and the 1-based row index.
+        return {
+          customer: _rowToCustomerObject(row, headers),
+          rowIndex: i + 2, // data array is 0-indexed, so row 1 is index 0. We want the spreadsheet row number, so add 2.
+        };
+      }
+    }
+    return null; // Not found
+  } catch (error) {
+    _logError("_findCustomerAndIndexBy", error);
+    return null;
+  }
+}
+
+/**
+ * Private generic helper to find a customer row by a specific column name and value.
+ * This returns only the customer object.
+ * @private
+ * @param {string} columnName - The name of the column to search in (e.g., "phone").
+ * @param {string|number} value - The value to search for.
+ * @returns {Object|null} The full customer object if found, otherwise null.
+ */
+function _findCustomerBy(columnName, value) {
+  const result = _findCustomerAndIndexBy(columnName, value);
+  return result ? result.customer : null;
 }
 
 /**
@@ -115,6 +166,38 @@ function _getCustomersSheetOrThrow() {
 }
 
 // ================ CORE FUNCTIONS ================
+/**
+ * Finds a customer by their 10-digit phone number.
+ * @param {string} phone The phone number to search for.
+ * @returns {Object|null} A customer object if found, otherwise null.
+ */
+function findCustomerByPhone(phone) {
+  const normalizedPhone = _phoneValidator(phone)?.value;
+  if (!normalizedPhone) return null;
+  return _findCustomerBy("phone", normalizedPhone);
+}
+
+/**
+ * Finds a customer by their email address (case-insensitive).
+ * @param {string} email The email address to search for.
+ * @returns {Object|null} A customer object if found, otherwise null.
+ */
+function findCustomerByEmail(email) {
+  const normalizedEmail = _emailValidator(email)?.value;
+  if (!normalizedEmail) return null;
+  return _findCustomerBy("email", normalizedEmail);
+}
+
+/**
+ * Finds a customer by their unique customer ID.
+ * @param {string} customerId The customer ID to search for (e.g., "C00001").
+ * @returns {Object|null} A customer object if found, otherwise null.
+ */
+function findCustomerById(customerId) {
+  if (!customerId) return null;
+  return _findCustomerBy("customer_id", customerId);
+}
+
 /**
  * Retrieves all customer records from the spreadsheet.
  * @returns {Array<Object>} An array of all customer objects. Returns an empty array on error or if no customers exist.
@@ -204,6 +287,97 @@ function registerCustomer({ first_name, last_name, phone, email }) {
     return { success: true, customer: newCustomer };
   } catch (error) {
     _logError("registerCustomer", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Updates an existing customer record by their unique customer ID.
+ * @param {Object} updateData - The customer data to update. Must include `customer_id`.
+ * @param {string} updateData.customer_id - The ID of the customer to update.
+ * @param {string} [updateData.first_name] - New first name.
+ * @param {string} [updateData.last_name] - New last name.
+ * @param {string} [updateData.phone] - New phone number.
+ * @param {string} [updateData.email] - New email address.
+ * @returns {{success: boolean, customer: Object}|{success: boolean, error: string}} An object with the updated customer record on success, or an error message on failure.
+ */
+function updateCustomer(updateData) {
+  try {
+    // 1. Validate that a customer_id is provided.
+    const { customer_id } = updateData;
+    if (!customer_id) {
+      throw new Error("`customer_id` is required for updates.");
+    }
+
+    // 2. Find the customer's row index.
+    const customerRecord = _findCustomerAndIndexBy("customer_id", customer_id);
+    if (!customerRecord) {
+      throw new Error(`Customer with ID '${customer_id}' not found.`);
+    }
+
+    const sheet = _getCustomersSheetOrThrow();
+    const headers = sheet
+      .getRange(1, 1, 1, sheet.getLastColumn())
+      .getValues()[0];
+    const { customer, rowIndex } = customerRecord;
+
+    // 3. Process and validate the new data, checking for duplicates.
+    const updatedCustomer = { ...customer }; // Create a copy of the existing customer data.
+
+    // Handle each potential update field.
+    for (const key in updateData) {
+      const value = updateData[key];
+      if (key === "customer_id" || value === undefined || value === null) {
+        continue; // Skip the ID and null/undefined values.
+      }
+
+      switch (key) {
+        case "first_name":
+        case "last_name":
+          updatedCustomer[key] = value.trim();
+          break;
+        case "phone":
+          const phoneValidation = _phoneValidator(value);
+          if (!phoneValidation.success) {
+            throw new Error("Phone number must be 10 digits.");
+          }
+          const duplicatePhone = findCustomerByPhone(phoneValidation.value);
+          // Check for a duplicate phone that doesn't belong to the current customer.
+          if (duplicatePhone && duplicatePhone.customer_id !== customer_id) {
+            throw new Error(
+              `Phone number '${phoneValidation.value}' already exists.`,
+            );
+          }
+          updatedCustomer[key] = phoneValidation.value;
+          break;
+        case "email":
+          const emailValidation = _emailValidator(value);
+          if (!emailValidation.success) {
+            throw new Error("Invalid email format.");
+          }
+          const duplicateEmail = findCustomerByEmail(emailValidation.value);
+          // Check for a duplicate email that doesn't belong to the current customer.
+          if (duplicateEmail && duplicateEmail.customer_id !== customer_id) {
+            throw new Error(`Email '${emailValidation.value}' already exists.`);
+          }
+          updatedCustomer[key] = emailValidation.value;
+          break;
+        default:
+          // Ignore any other unknown keys in the update payload.
+          console.warn(`Attempted to update unknown key: ${key}`);
+          break;
+      }
+    }
+
+    // 4. Update the spreadsheet row with the new values.
+    const newRowData = headers.map((header) => updatedCustomer[header] || "");
+    sheet.getRange(rowIndex, 1, 1, headers.length).setValues([newRowData]);
+
+    console.log(`Customer ${customer_id} updated successfully.`);
+
+    return { success: true, customer: updatedCustomer };
+  } catch (error) {
+    _logError("updateCustomer", error);
     return { success: false, error: error.message };
   }
 }
