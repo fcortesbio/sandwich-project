@@ -256,6 +256,46 @@ function registerCustomer({ first_name, last_name, phone, email }) {
 }
 
 /**
+ * @private
+ *  Retrieves the last customer ID from the settings sheet and increments it.
+ * Throws an error if the settings sheet or key is not found
+ * @returns {string} The new unique customer ID (e.g., "C00001")
+ */
+function _generateNextCustomerId() {
+  try {
+    const settingsSheet =
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("settings");
+    if (!settingsSheet) {
+      throw new Error("Settings sheet not found. Please run setup first.");
+    }
+
+    // Find the row with the last customer ID counter
+    const data = settingsSheet.getDataRange().getValues();
+    let lastIdNumRow = -1;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] === "last_customer_id_number") {
+        lastIdNumRow = i;
+        break;
+      }
+    }
+
+    if (lastIdNumRow === -1) {
+      throw new Error("Missing 'last_customer_id_number' in settings sheet.");
+    }
+
+    // Get the last ID number, increment it, and update the sheet
+    const lastIdNum = parseInt(data[lastIdNumRow][1], 10);
+    const nextIdNum = lastIdNum + 1;
+    settingsSheet.getRange(lastIdNumRow + 1, 2).setValue(nextIdNum);
+
+    return `C${String(nextIdNum).padStart(5, "0")}`;
+  } catch (error) {
+    _logError("_generateNextCustomerId", error);
+    throw new Error("Failed to generate a new customer ID.");
+  }
+}
+
+/**
  * Generates the next sequential customer ID (e.g., C00001, C00002).
  * Finds the highest existing ID and increments it.
  * @returns {string} The new unique customer ID.
