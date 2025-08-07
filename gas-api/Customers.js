@@ -66,37 +66,6 @@ function _generateNextCustomerId() {
 }
 
 /**
- * Private generic helper to find a customer row by a specific column name and value.
- * @private
- * @param {string} columnName - The name of the column to search in (e.g., "phone").
- * @param {string|number} value - The value to search for.
- * @returns {Object|null} The full customer object if found, otherwise null.
- */
-function _findCustomerBy(columnName, value) {
-  try {
-    const sheet = _getCustomersSheetOrThrow();
-    const data = sheet.getDataRange().getValues();
-    const headers = data.shift(); // Remove headers from data and store them
-
-    const columnIndex = headers.indexOf(columnName);
-    if (columnIndex === -1) return null; // Column not found
-
-    const normalizedValue = String(value).trim().toLowerCase();
-
-    for (const row of data) {
-      const cellValue = String(row[columnIndex]).trim().toLowerCase();
-      if (cellValue === normalizedValue) {
-        return _rowToCustomerObject(row, headers);
-      }
-    }
-    return null; // Not found
-  } catch (error) {
-    _logError("_findCustomerBy", error);
-    return null;
-  }
-}
-
-/**
  * Validates and cleans a phone number string.
  * @private
  * @param {string} phone - The raw phone number input to validate.
@@ -146,62 +115,6 @@ function _getCustomersSheetOrThrow() {
 }
 
 // ================ CORE FUNCTIONS ================
-
-/**
- * Finds a customer by their 10-digit phone number.
- * @param {string} phone The phone number to search for.
- * @returns {Object|null} A customer object if found, otherwise null.
- */
-function findCustomerByPhone(phone) {
-  const normalizedPhone = _phoneValidator(phone)?.value;
-  if (!normalizedPhone) return null;
-  return _findCustomerBy("phone", normalizedPhone);
-}
-
-/**
- * Finds a customer by their email address (case-insensitive).
- * @param {string} email The email address to search for.
- * @returns {Object|null} A customer object if found, otherwise null.
- */
-function findCustomerByEmail(email) {
-  const normalizedEmail = _emailValidator(email)?.value;
-  if (!normalizedEmail) return null;
-  return _findCustomerBy("email", normalizedEmail);
-}
-
-/**
- * Finds a customer by their unique customer ID.
- * @param {string} customerId The customer ID to search for (e.g., "C00001").
- * @returns {Object|null} A customer object if found, otherwise null.
- */
-function findCustomerById(customerId) {
-  if (!customerId) return null;
-  return _findCustomerBy("customer_id", customerId);
-}
-
-/**
- * Finds a customer by exact first and last name match (case-insensitive).
- * @param {string} firstName
- * @param {string} lastName
- * @returns {Object|null}
- */
-function findCustomerByFullName(firstName, lastName) {
-  if (!firstName || !lastName) return null;
-
-  const lowerFirst = firstName.trim().toLowerCase();
-  const lowerLast = lastName.trim().toLowerCase();
-
-  const allCustomers = getAllCustomers();
-
-  return (
-    allCustomers.find(
-      (c) =>
-        (c.first_name || "").toLowerCase() === lowerFirst &&
-        (c.last_name || "").toLowerCase() === lowerLast,
-    ) || null
-  );
-}
-
 /**
  * Retrieves all customer records from the spreadsheet.
  * @returns {Array<Object>} An array of all customer objects. Returns an empty array on error or if no customers exist.
@@ -292,47 +205,5 @@ function registerCustomer({ first_name, last_name, phone, email }) {
   } catch (error) {
     _logError("registerCustomer", error);
     return { success: false, error: error.message };
-  }
-}
-
-/**
- * Generates the next sequential customer ID (e.g., C00001, C00002).
- * Finds the highest existing ID and increments it.
- * @returns {string} The new unique customer ID.
- */
-function generateCustomerId() {
-  try {
-    const sheet = _getCustomersSheetOrThrow();
-    const idColumnIndex = sheet
-      .getRange(1, 1, 1, sheet.getLastColumn())
-      .getValues()[0]
-      .indexOf("customer_id");
-    if (idColumnIndex === -1) throw new Error("Missing 'customer_id' column");
-
-    const lastRow = sheet.getLastRow();
-    if (lastRow < 2) return "C00001"; // No existing customers
-
-    const lastId = sheet.getRange(lastRow, idColumnIndex + 1).getValue();
-    if (!lastId || !/^C\d{5}$/.test(lastId)) {
-      // Fallback if last ID is malformed, scan all IDs
-      const allIds = sheet
-        .getRange(2, idColumnIndex + 1, lastRow - 1, 1)
-        .getValues()
-        .flat();
-      const maxIdNum = allIds.reduce((max, id) => {
-        const num = parseInt(String(id).slice(1), 10);
-        return isNaN(num) ? max : Math.max(max, num);
-      }, 0);
-      const nextIdNum = maxIdNum + 1;
-      return `C${String(nextIdNum).padStart(5, "0")}`;
-    }
-
-    const lastIdNum = parseInt(lastId.slice(1), 10);
-    const nextIdNum = lastIdNum + 1;
-    return `C${String(nextIdNum).padStart(5, "0")}`;
-  } catch (error) {
-    _logError("generateCustomerId", error);
-    // Fallback ID in case of critical error, less reliable but prevents failure.
-    return `C${Date.now().toString().slice(-5)}`;
   }
 }
