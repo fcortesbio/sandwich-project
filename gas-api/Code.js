@@ -7,13 +7,15 @@
  * Performs first-time setup for the spreadsheet.
  * Creates the `customers` and `sales_summary` sheets with headers if they don't exist.
  * Deletes the default "Sheet1" if it is present.
+ * @returns {{success: boolean, actions: Array<string>}} An object containing a success flag and a list of actions performed.
  */
 function setupSpreadsheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const actions = [];
+
   // Create the `customers` sheet if it doesn't already exist.
   if (!ss.getSheetByName("customers")) {
     const customersSheet = ss.insertSheet("customers");
-    // Add header row to the new sheet.
     customersSheet.appendRow([
       "customer_id",
       "first_name",
@@ -22,28 +24,31 @@ function setupSpreadsheets() {
       "email",
       "registered_at",
     ]);
-    console.log("Sheet `customers` created.");
+    actions.push("Sheet `customers` created.");
   }
 
   // Create the `sales_summary` sheet if it doesn't already exist.
   if (!ss.getSheetByName("sales_summary")) {
     const summarySheet = ss.insertSheet("sales_summary");
-    // Add header row to the new sheet.
     summarySheet.appendRow([
       "month",
       "status", // "pending" or "settled"
       "last_updated_at",
     ]);
-    console.log("Sheet 'sales_summary' created.");
+    actions.push("Sheet `sales_summary` created.");
   }
 
-  // Find the default sheet named "Sheet1".
+  // Delete the default "Sheet1" if it exists.
   const defaultSheet = ss.getSheetByName("Sheet1");
   if (defaultSheet) {
-    // If "Sheet1" exists, delete it.
     ss.deleteSheet(defaultSheet);
-    console.log("Sheet 'Sheet1' has been deleted.");
+    actions.push("Sheet `Sheet1` has been deleted.");
   }
+
+  // Return a success object with the list of actions.
+    return actions.length === 0 ? 
+    { success: true, actions: null } : 
+    { success: true, actions: actions };
 }
 
 /**
