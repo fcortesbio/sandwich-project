@@ -7,7 +7,7 @@
  * Performs first-time setup for the spreadsheet.
  * Creates the `customers` and `sales_summary` sheets with headers if they don't exist.
  * Deletes the default "Sheet1" if it is present.
- * @returns {{success: boolean, actions: Array<string>}} An object containing a success flag and a list of actions performed.
+ * @returns {{success: boolean, actions: Array<string>|null}} An object containing a success flag and a list of actions performed, or null if no actions were taken.
  */
 function setupSpreadsheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -46,9 +46,9 @@ function setupSpreadsheets() {
   }
 
   // Return a success object with the list of actions.
-    return actions.length === 0 ? 
-    { success: true, actions: null } : 
-    { success: true, actions: actions };
+  return actions.length === 0
+    ? { success: true, actions: null }
+    : { success: true, actions: actions };
 }
 
 /**
