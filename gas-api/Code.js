@@ -38,7 +38,7 @@ function setupSpreadsheets() {
   const defaultSheet = ss.getSheetByName("Sheet1");
   if (defaultSheet) {
     ss.deleteSheet(defaultSheet);
-    actions.push("Sheet `Sheet1` has been deleted.");
+    actions.push("Sheet `Sheet1` deleted.");
   }
 
   // Return a success object with the list of actions.
