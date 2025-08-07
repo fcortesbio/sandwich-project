@@ -25,6 +25,14 @@ function doGet(e) {
   try {
     // Use a switch statement to handle different actions.
     switch (action) {
+      case "setup":
+        // Initialize spreadsheet structure for customer and sales management
+        const ss = setupSpreadsheets();
+        // Return the customer data as a JSON string.
+        return ContentService.createTextOutput(
+          JSON.stringify({ success: true, data: ss }),
+        ).setMimeType(ContentService.MimeType.JSON);
+
       case "getAllCustomers":
         // Fetch all customer records.
         const customers = getAllCustomers();
