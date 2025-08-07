@@ -5,15 +5,14 @@
 
 /**
  * Performs first-time setup for the spreadsheet.
- * Creates the `customers` and `sales_summary` sheets with headers if they don't exist.
- * Deletes the default "Sheet1" if it is present.
- * @returns {{success: boolean, actions: Array<string>|null}} An object containing a success flag and a list of actions performed, or null if no actions were taken.
+ * Creates the `customers`, `sales_summary`, and `settings` sheets.
+ * @returns {{success: boolean, actions: Array<string>}} An object containing a success flag and a list of actions performed.
  */
 function setupSpreadsheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const actions = [];
 
-  // Create the `customers` sheet if it doesn't already exist.
+  // Existing code to create 'customers' and 'sales_summary' sheets...
   if (!ss.getSheetByName("customers")) {
     const customersSheet = ss.insertSheet("customers");
     customersSheet.appendRow([
@@ -26,24 +25,27 @@ function setupSpreadsheets() {
     ]);
     actions.push("Sheet `customers` created.");
   }
-
-  // Create the `sales_summary` sheet if it doesn't already exist.
   if (!ss.getSheetByName("sales_summary")) {
     const summarySheet = ss.insertSheet("sales_summary");
     summarySheet.appendRow(["month", "status", "last_updated_at"]);
     actions.push("Sheet `sales_summary` created.");
   }
+  if (!ss.getSheetByName("settings")) {
+    const settingsSheet = ss.insertSheet("settings");
+    settingsSheet.appendRow(["key", "value"]);
+    settingsSheet.appendRow(["last_customer_id_number", "0"]); // Initialize the counter
+    actions.push("Sheet `settings` created with ID counter.");
+  }
 
-  // Delete the default "Sheet1" if it exists.
   const defaultSheet = ss.getSheetByName("Sheet1");
   if (defaultSheet) {
     ss.deleteSheet(defaultSheet);
     actions.push("Sheet `Sheet1` deleted.");
   }
 
-  // Return a success object with the list of actions.
-  // Check if the array is empty using the length property.
-  return actions.length === 0 ? "no action required" : actions
+  const message =
+    actions.length === 0 ? "No action required." : "Setup completed.";
+  return { success: true, message: message, actions: actions };
 }
 
 /**
