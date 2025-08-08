@@ -113,6 +113,69 @@ function _calculateSaleStatus(totalPrice, amountPaid) {
   return SALE_STATUS.UNPAID;
 }
 
+/**
+ * Handles data validation for sale input data prior registerSale(sale) execution
+ * @param {string} customerId
+ * @param {number} quantity
+ * @param {number} amountPaid
+ * @returns {object} The validated and sanitized sale data object.
+ */
+function _validateSale(customerId, quantity, amountPaid) {
+  // Validate:
+  // Inputs required are present
+  if (
+    !customerId ||
+    quantity === null ||
+    quantity === undefined ||
+    amountPaid === null ||
+    amountPaid === undefined
+  ) {
+    throw new Error(
+      "Missing required fields: customerId, quantity, amountPaid",
+    );
+  }
+
+  // customerId matches with an already existing customer
+  // This uses functions from Customer.js module
+  if (!_customerIdIsValid(customerId)) {
+    throw new Error(
+      `Customer ID '${customerId}' is not in the correct format.`,
+    );
+  }
+  if (!_customerExists(customerId)) {
+    throw new Error(`Customer with ID '${customerId}' does not exist.`);
+  }
+
+  // Quantity and amount paid are numbers and integers
+  if (
+    typeof quantity !== "number" ||
+    !Number.isInteger(quantity) ||
+    typeof amountPaid !== "number" ||
+    !Number.isInteger(amountPaid)
+  ) {
+    throw new Error("Quantity and amountPaid must be integers.");
+  }
+
+  // Quantity greater than 0, and Amount paid is non-negative
+  if (quantity <= 0) {
+    throw new Error("Quantity must be greater than 0.");
+  }
+  if (amountPaid < 0) {
+    throw new Error("Amount paid cannot be a negative number.");
+  }
+
+  // Amount paid isn't greater than Quantity * DEFAULT_UNIT_PRICE
+  const totalPrice = quantity * DEFAULT_UNIT_PRICE;
+  if (amountPaid > totalPrice) {
+    throw new Error(
+      `Amount paid (${amountPaid}) cannot be greater than the total price (${totalPrice}).`,
+    );
+  }
+
+  // If all validations pass, return the sanitized and validated data
+  return { customerId, quantity, amountPaid };
+}
+
 // ================ CORE FUNCTIONS ================
 
 /**
@@ -124,17 +187,8 @@ function _calculateSaleStatus(totalPrice, amountPaid) {
  */
 function registerSale(customerId, quantity, amountPaid) {
   try {
-    // 1. Validate inputs
-    if (!customerId || !quantity || !amountPaid) {
-      throw new Error(
-        "Missing required fields: customerId, quantity, amountPaid",
-      );
-    }
-    if (quantity <= 0 || amountPaid < 0) {
-      throw new Error(
-        "Quantity must be greater than 0 and amountPaid must be non-negative.",
-      );
-    }
+    // 1. Validate inputs using our helper function
+    _validateSale(customerId, quantity, amountPaid);
 
     // 2. Compute sale details
     const saleDate = new Date();
