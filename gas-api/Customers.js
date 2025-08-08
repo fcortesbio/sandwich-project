@@ -7,6 +7,7 @@
 // ===  Constants  ===
 const NON_DIGITS_REGEX = /\D/g; // Matches all characters that are NOT digits.
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Validates a standard email structure like name@domain.com
+const CUSTOMER_ID_REGEX = /^C\d{5}$/; // Validates if a Customer ID matches the format C+5-digits, e.g., C00001
 
 // ================  Helpers  ================
 
@@ -24,12 +25,35 @@ function _rowToCustomerObject(row, headers) {
   });
   return customer;
 }
+/**
+ * Evaluates whether a customer with a customerId already exists in the customersSheet
+ * @param {string} customerId
+ * @returns {boolean}
+ */
+function _customerExists(customerId) {
+  // We can use the existing `findCustomerById` function
+  // to cleanly check for a customer's existence.
+  const customer = findCustomerById(customerId);
+  // Return true if a customer object was found, otherwise false.
+  return !!customer;
+}
+
+/**
+ * Evaluates whether a customer ID string is in the expected format.
+ * NOTE: Corrected a typo here from 'code' to 'customerId'.
+ * @private
+ * @param {string} customerId - The customer ID to validate.
+ * @returns {boolean} True if the format is valid, otherwise false.
+ */
+function _customerIdIsValid(customerId) {
+  return CUSTOMER_ID_REGEX.test(customerId);
+}
 
 /**
  * Retrieves the last customer ID from the settings sheet and increments it.
  * Throws an error if the settings sheet or key is not found
  * @private
- * @returns {string} The new unique customer ID (e.g., "C00001")
+ * @returns {string} The new unique customer ID (e.g., "C000001")
  */
 function _generateNextCustomerId() {
   try {
@@ -190,11 +214,13 @@ function findCustomerByEmail(email) {
 
 /**
  * Finds a customer by their unique customer ID.
- * @param {string} customerId The customer ID to search for (e.g., "C00001").
+ * @param {string} customerId The customer ID to search for (e.g., "C000001").
  * @returns {Object|null} A customer object if found, otherwise null.
  */
 function findCustomerById(customerId) {
-  if (!customerId) return null;
+  if (!_customerIdIsValid(customerId)) {
+    return null;
+  }
   return _findCustomerBy("customer_id", customerId);
 }
 
@@ -307,6 +333,10 @@ function updateCustomer(updateData) {
     const { customer_id } = updateData;
     if (!customer_id) {
       throw new Error("`customer_id` is required for updates.");
+    }
+    if (!_customerIdIsValid(customer_id)) {
+      console.log("Invalid format for `customer_id`");
+      throw new Error("Invalid format for `customer_id`");
     }
 
     // 2. Find the customer's row index.
