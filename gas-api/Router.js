@@ -21,7 +21,7 @@
 function doGet(e) {
   // Extract the action from the URL query parameters.
   const action = e.parameter.action;
-  Logger.log("Processing GET request. ", `Action: ${action}`);
+  console.log("Processing GET request. ", `Action: ${action}`);
 
   try {
     // Use a switch statement to handle different actions.
@@ -55,7 +55,7 @@ function doGet(e) {
     }
   } catch (err) {
     // Catch any unexpected errors during execution and return a generic error message.
-    Logger.log("Unexpected error during execution:", `error: ${err.message}`);
+    console.log("Unexpected error during execution:", `error: ${err.message}`);
     return ContentService.createTextOutput(
       JSON.stringify({ success: false, error: err.message }),
     ).setMimeType(ContentService.MimeType.JSON);
@@ -125,7 +125,7 @@ function doPost(e) {
         ).setMimeType(ContentService.MimeType.JSON);
     }
   } catch (err) {
-    Logger.log("Unexpected error during execution:", `error: ${err.message}`);
+    console.log("Unexpected error during execution:", `error: ${err.message}`);
     return ContentService.createTextOutput(
       JSON.stringify({ success: false, error: err.message }),
     ).setMimeType(ContentService.MimeType.JSON);
