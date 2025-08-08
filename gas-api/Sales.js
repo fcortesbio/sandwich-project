@@ -61,44 +61,42 @@ function _rowToSaleObject(row, headers) {
 }
 
 /**
- * Private helper to generate the next sale ID for a specific month sheet
+ * Retrieves the last sale ID from the settings sheet and increments it.
+ * Throws an error if the settings sheet or key is not found.
  * @private
- * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The sales sheet
- * @returns {string} The new unique sale ID (e.g., S00001)
+ * @returns {string} The new unique sale ID (e.g., "S00001").
  */
-function _generateSaleId(sheet) {
+function _generateNextSaleId() {
   try {
-    const headers = sheet
-      .getRange(1, 1, 1, sheet.getLastColumn())
-      .getValues()[0];
-    const idColumnIndex = headers.indexOf("sale_id");
-    if (idColumnIndex === -1) throw new Error("Missing 'sale_id' column");
-
-    const lastRow = sheet.getLastRow();
-    if (lastRow < 2) return "S00001"; // No existing sales
-
-    const lastId = sheet.getRange(lastRow, idColumnIndex + 1).getValue();
-    if (!lastId || !/^S\d{5}$/.test(lastId)) {
-      // Fallback if last ID is malformed, scan all IDs
-      const allIds = sheet
-        .getRange(2, idColumnIndex + 1, lastRow - 1, 1)
-        .getValues()
-        .flat();
-      const maxIdNum = allIds.reduce((max, id) => {
-        const num = parseInt(String(id).slice(1), 10);
-        return isNaN(num) ? max : Math.max(max, num);
-      }, 0);
-      const nextIdNum = maxIdNum + 1;
-      return `S${String(nextIdNum).padStart(5, "0")}`;
+    const settingsSheet =
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("settings");
+    if (!settingsSheet) {
+      throw new Error("Settings sheet not found. Please run setup first.");
     }
 
-    const lastIdNum = parseInt(lastId.slice(1), 10);
+    // Find the row with the last sale ID counter
+    const data = settingsSheet.getDataRange().getValues();
+    let lastIdNumRow = -1;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] === "last_sale_id_number") {
+        lastIdNumRow = i;
+        break;
+      }
+    }
+
+    if (lastIdNumRow === -1) {
+      throw new Error("Missing 'last_sale_id_number' in settings sheet.");
+    }
+
+    // Get the last ID number, increment it, and update the sheet
+    const lastIdNum = parseInt(data[lastIdNumRow][1], 10);
     const nextIdNum = lastIdNum + 1;
+    settingsSheet.getRange(lastIdNumRow + 1, 2).setValue(nextIdNum);
+
     return `S${String(nextIdNum).padStart(5, "0")}`;
   } catch (error) {
-    _logError("_generateSaleId", error);
-    // Fallback ID in case of critical error
-    return `S${Date.now().toString().slice(-5)}`;
+    _logError("_generateNextSaleId", error);
+    throw new Error("Failed to generate a new sale ID.");
   }
 }
 
@@ -113,4 +111,74 @@ function _calculateSaleStatus(totalPrice, amountPaid) {
   if (amountPaid >= totalPrice) return SALE_STATUS.PAID;
   if (amountPaid > 0) return SALE_STATUS.PARTIAL;
   return SALE_STATUS.UNPAID;
+}
+
+// ================ CORE FUNCTIONS ================
+
+/**
+ * Registers a new sale for a customer.
+ * @param {string} customerId - The ID of the customer making the purchase.
+ * @param {number} quantity - The number of units sold.
+ * @param {number} amountPaid - The initial amount paid.
+ * @returns {{success: boolean, sale: Object}|{success: boolean, error: string}} An object with the new sale record on success, or an error message on failure.
+ */
+function registerSale(customerId, quantity, amountPaid) {
+  try {
+    // 1. Validate inputs
+    if (!customerId || !quantity || !amountPaid) {
+      throw new Error(
+        "Missing required fields: customerId, quantity, amountPaid",
+      );
+    }
+    if (quantity <= 0 || amountPaid < 0) {
+      throw new Error(
+        "Quantity must be greater than 0 and amountPaid must be non-negative.",
+      );
+    }
+
+    // 2. Compute sale details
+    const saleDate = new Date();
+    const month = Utilities.formatDate(
+      saleDate,
+      Session.getScriptTimeZone(),
+      "yyyy-MM",
+    );
+    const totalPrice = quantity * DEFAULT_UNIT_PRICE;
+    const pendingBalance = totalPrice - amountPaid;
+    const status = _calculateSaleStatus(totalPrice, amountPaid);
+
+    // 3. Get the correct sheet and generate a unique sale ID
+    const sheet = _getSalesSheetForMonth(month);
+    const saleId = _generateNextSaleId();
+
+    // 4. Construct the new sale object
+    const newSale = {
+      sale_id: saleId,
+      customer_id: customerId,
+      quantity: quantity,
+      unit_price: DEFAULT_UNIT_PRICE,
+      total_price: totalPrice,
+      amount_paid: amountPaid,
+      pending_balance: pendingBalance,
+      status: status,
+      sale_datetime: saleDate.toISOString(),
+      last_payment_datetime: saleDate.toISOString(),
+    };
+
+    // 5. Append the new row to the sheet
+    const headers = sheet
+      .getRange(1, 1, 1, sheet.getLastColumn())
+      .getValues()[0];
+    const newRow = headers.map((header) => newSale[header] || "");
+    sheet.appendRow(newRow);
+
+    console.log(
+      `Sale ${saleId} registered successfully for customer ${customerId}`,
+    );
+
+    return { success: true, sale: newSale };
+  } catch (error) {
+    _logError("registerSale", error);
+    return { success: false, error: error.message };
+  }
 }
