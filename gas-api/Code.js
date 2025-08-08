@@ -62,7 +62,6 @@ function setupSpreadsheets() {
  * @param {Error|string} error - The error object or message to log.
  */
 function _logError(context, error) {
-  // Use a more robust check for the error message
   const errorMessage = error instanceof Error ? error.message : error;
   console.error(`[${context}] ${errorMessage}`);
 }
