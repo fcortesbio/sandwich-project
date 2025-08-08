@@ -106,6 +106,14 @@ function doPost(e) {
           JSON.stringify(updateResult),
         ).setMimeType(ContentService.MimeType.JSON);
 
+      case "registerSale":
+        // Ensure all required fields are present in the 'data' payload
+        const { customerId, quantity, amountPaid } = data;
+        const saleResult = registerSale(customerId, quantity, amountPaid);
+        return ContentService.createTextOutput(
+          JSON.stringify(saleResult),
+        ).setMimeType(ContentService.MimeType.JSON);
+
       // TODO: Add more cases for other POST actions, e.g., "createSaleRecord".
 
       default:
